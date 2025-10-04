@@ -15,95 +15,101 @@ class PrinterConstraints:
 
 def optimize_printing(print_jobs: List[Dict], constraints: Dict) -> Dict:
     """
-    Оптимізує чергу 3D-друку згідно з пріоритетами та обмеженнями принтера,
-    використовуючи жадібний алгоритм.
+    Optimizes the 3D printing queue according to priorities and printer constraints,
+    using a greedy algorithm.
 
     Args:
-        print_jobs: Список завдань на друк у форматі словників.
-        constraints: Обмеження принтера у форматі словника.
+        print_jobs: A list of print jobs as dictionaries.
+        constraints: Printer constraints as a dictionary.
 
     Returns:
-        Dict з оптимальним порядком друку та загальним часом.
+        A dict with the optimal print order and total time.
     """
-    # Крок 1: Перетворюємо вхідні словники на об'єкти dataclass 
+    # Step 1: Convert input dictionaries to dataclass objects for convenience
     jobs = [PrintJob(**job) for job in print_jobs]
     printer_cons = PrinterConstraints(**constraints)
 
-    # Крок 2: Сортуємо завдання за пріоритетом жадібний вибір
+    # Step 2: Sort jobs by priority (greedy choice)
+    # A lower priority number means a higher priority
     jobs.sort(key=lambda job: job.priority)
 
     print_order = []
     total_time = 0
     
+    # Copy the list to safely remove items from it
     remaining_jobs = list(jobs)
 
-    # Крок 3: Формуємо партії, доки є невиконані завдання
+    # Step 3: Form batches as long as there are unprinted jobs
     while remaining_jobs:
         current_batch = []
         current_volume = 0
         
+        # A list for jobs that will be removed from remaining_jobs
         jobs_to_remove = []
 
-        # Крок 4: Жадібно наповнюємо партію
+        # Step 4: Greedily fill the batch
         for job in remaining_jobs:
-            
+            # Check if the job can be added to the current batch
             if (current_volume + job.volume <= printer_cons.max_volume and
                     len(current_batch) < printer_cons.max_items):
                 
-                
+                # Add the job to the batch
                 current_batch.append(job)
                 current_volume += job.volume
                 jobs_to_remove.append(job)
 
+        # If the batch is empty but jobs remain, it means the next job
+        # is too large for the printer. Print it alone.
         if not current_batch and remaining_jobs:
             job = remaining_jobs[0]
-        
+            # Check if a single job does not exceed constraints
             if job.volume > printer_cons.max_volume or printer_cons.max_items < 1:
-                 print(f"Попередження: Завдання {job.id} не може бути надруковане, оскільки перевищує обмеження принтера.")
-                 jobs_to_remove.append(job) 
+                 print(f"Warning: Job {job.id} cannot be printed as it exceeds printer constraints.")
+                 jobs_to_remove.append(job) # Remove to avoid an infinite loop
             else:
                 current_batch.append(job)
                 jobs_to_remove.append(job)
 
-
-        # Крок 5: Обробляємо сформовану партію
+        # Step 5: Process the formed batch
         if current_batch:
-            
+            # The batch print time is the time of the longest job in it
             batch_time = max(job.print_time for job in current_batch)
             total_time += batch_time
 
+            # Add job IDs to the final order
             for job in current_batch:
                 print_order.append(job.id)
 
+            # Remove the processed jobs from the waiting list
             remaining_jobs = [job for job in remaining_jobs if job not in jobs_to_remove]
-
+        # If remaining_jobs is not empty after this, but current_batch is, 
+        # it means we cannot process the rest of the jobs.
         elif remaining_jobs:
-            print("Помилка: Не вдалося обробити решту завдань. Можливо, вони завеликі.")
+            print("Error: Could not process remaining jobs. They might be too large.")
             break
-
 
     return {
         "print_order": print_order,
         "total_time": total_time
     }
 
-# Тестування
+# Testing
 def test_printing_optimization():
-    # Тест 1: Моделі однакового пріоритету
+    # Test 1: Same priority models
     test1_jobs = [
         {"id": "M1", "volume": 100, "priority": 1, "print_time": 120},
         {"id": "M2", "volume": 150, "priority": 1, "print_time": 90},
         {"id": "M3", "volume": 120, "priority": 1, "print_time": 150}
     ]
 
-    # Тест 2: Моделі різних пріоритетів
+    # Test 2: Different priority models
     test2_jobs = [
-        {"id": "M1", "volume": 100, "priority": 2, "print_time": 120},  # лабораторна
-        {"id": "M2", "volume": 150, "priority": 1, "print_time": 90},  # дипломна
-        {"id": "M3", "volume": 120, "priority": 3, "print_time": 150}  # особистий проєкт
+        {"id": "M1", "volume": 100, "priority": 2, "print_time": 120},  # lab work
+        {"id": "M2", "volume": 150, "priority": 1, "print_time": 90},  # thesis
+        {"id": "M3", "volume": 120, "priority": 3, "print_time": 150}  # personal project
     ]
 
-    # Тест 3: Перевищення обмежень об'єму
+    # Test 3: Exceeding volume constraints
     test3_jobs = [
         {"id": "M1", "volume": 250, "priority": 1, "print_time": 180},
         {"id": "M2", "volume": 200, "priority": 1, "print_time": 150},
@@ -115,20 +121,20 @@ def test_printing_optimization():
         "max_items": 2
     }
 
-    print("Тест 1 (однаковий пріоритет):")
+    print("Test 1 (same priority):")
     result1 = optimize_printing(test1_jobs, constraints)
-    print(f"Порядок друку: {result1['print_order']}")
-    print(f"Загальний час: {result1['total_time']} хвилин")
+    print(f"Print order: {result1['print_order']}")
+    print(f"Total time: {result1['total_time']} minutes")
 
-    print("\nТест 2 (різні пріоритети):")
+    print("\nTest 2 (different priorities):")
     result2 = optimize_printing(test2_jobs, constraints)
-    print(f"Порядок друку: {result2['print_order']}")
-    print(f"Загальний час: {result2['total_time']} хвилин")
+    print(f"Print order: {result2['print_order']}")
+    print(f"Total time: {result2['total_time']} minutes")
 
-    print("\nТест 3 (перевищення обмежень):")
+    print("\nTest 3 (exceeding constraints):")
     result3 = optimize_printing(test3_jobs, constraints)
-    print(f"Порядок друку: {result3['print_order']}")
-    print(f"Загальний час: {result3['total_time']} хвилин")
+    print(f"Print order: {result3['print_order']}")
+    print(f"Total time: {result3['total_time']} minutes")
 
 if __name__ == "__main__":
     test_printing_optimization()
