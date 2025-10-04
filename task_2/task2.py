@@ -25,18 +25,16 @@ def optimize_printing(print_jobs: List[Dict], constraints: Dict) -> Dict:
     Returns:
         Dict з оптимальним порядком друку та загальним часом.
     """
-    # Крок 1: Перетворюємо вхідні словники на об'єкти dataclass для зручності
+    # Крок 1: Перетворюємо вхідні словники на об'єкти dataclass 
     jobs = [PrintJob(**job) for job in print_jobs]
     printer_cons = PrinterConstraints(**constraints)
 
-    # Крок 2: Сортуємо завдання за пріоритетом (жадібний вибір)
-    # Менше значення priority означає вищий пріоритет
+    # Крок 2: Сортуємо завдання за пріоритетом жадібний вибір
     jobs.sort(key=lambda job: job.priority)
 
     print_order = []
     total_time = 0
     
-    # Копіюємо список, щоб безпечно видаляти з нього елементи
     remaining_jobs = list(jobs)
 
     # Крок 3: Формуємо партії, доки є невиконані завдання
@@ -44,28 +42,25 @@ def optimize_printing(print_jobs: List[Dict], constraints: Dict) -> Dict:
         current_batch = []
         current_volume = 0
         
-        # Список для завдань, які будуть видалені з remaining_jobs
         jobs_to_remove = []
 
         # Крок 4: Жадібно наповнюємо партію
         for job in remaining_jobs:
-            # Перевіряємо, чи можна додати завдання до поточної партії
+            
             if (current_volume + job.volume <= printer_cons.max_volume and
                     len(current_batch) < printer_cons.max_items):
                 
-                # Додаємо завдання до партії
+                
                 current_batch.append(job)
                 current_volume += job.volume
                 jobs_to_remove.append(job)
 
-        # Якщо партія порожня, але завдання ще є, це означає, що
-        # наступне завдання завелике для принтера. Друкуємо його окремо.
         if not current_batch and remaining_jobs:
             job = remaining_jobs[0]
-            # Перевірка, чи одне завдання не перевищує обмеження
+        
             if job.volume > printer_cons.max_volume or printer_cons.max_items < 1:
                  print(f"Попередження: Завдання {job.id} не може бути надруковане, оскільки перевищує обмеження принтера.")
-                 jobs_to_remove.append(job) # Видаляємо, щоб не було нескінченного циклу
+                 jobs_to_remove.append(job) 
             else:
                 current_batch.append(job)
                 jobs_to_remove.append(job)
@@ -73,18 +68,15 @@ def optimize_printing(print_jobs: List[Dict], constraints: Dict) -> Dict:
 
         # Крок 5: Обробляємо сформовану партію
         if current_batch:
-            # Час друку партії - це час найдовшого завдання в ній
+            
             batch_time = max(job.print_time for job in current_batch)
             total_time += batch_time
 
-            # Додаємо ID завдань до фінального порядку
             for job in current_batch:
                 print_order.append(job.id)
 
-            # Видаляємо оброблені завдання зі списку очікування
             remaining_jobs = [job for job in remaining_jobs if job not in jobs_to_remove]
-        # Якщо і після цього `remaining_jobs` не порожній, а `current_batch` порожній,
-        # це означає, що ми не можемо обробити решту завдань.
+
         elif remaining_jobs:
             print("Помилка: Не вдалося обробити решту завдань. Можливо, вони завеликі.")
             break
