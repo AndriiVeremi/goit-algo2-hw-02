@@ -1,27 +1,46 @@
-# Домашнє завдання: Основи аналізу та алгоритмічні стратегії
+# Homework: Fundamentals of Analysis and Algorithmic Strategies
 
-Цей проєкт містить реалізацію двох алгоритмічних завдань.
-
----
-
-### 1. Завдання 1: Пошук Min/Max
-
-Реалізація рекурсивного пошуку мінімального та максимального елементів у масиві за принципом "Розділяй і володарюй".
+This project contains the implementation of two algorithmic tasks.
 
 ---
 
-### 2. Завдання 2: Оптимізатор черги 3D-принтера
+### 1. Task 1: Min/Max Search
 
-Жадібний алгоритм для оптимізації черги друку. Завдання сортуються за пріоритетом, після чого формуються партії для друку, враховуючи обмеження принтера по об'єму та кількості моделей. Час виконання партії визначається найдовшим завданням у ній.
+An implementation of a recursive search for the minimum and maximum elements in an array using the "Divide and Conquer" principle.
+
+*   **Time Complexity:** `O(n)`
+*   **Space Complexity:** `O(log n)` (due to the recursion stack)
 
 ---
 
-### 🚀 Як запустити?
+### 2. Task 2: 3D Printer Queue Optimizer
 
-Запустіть головний скрипт та оберіть потрібне завдання в інтерактивному меню.
+A greedy algorithm for optimizing a 3D print queue. Jobs are sorted by priority, after which print batches are formed, taking into account the printer's constraints on volume and number of models. The execution time of a batch is determined by the longest job in it.
+
+*   **Time Complexity:** `O(n log n)` (due to sorting)
+*   **Space Complexity:** `O(n)`
+
+---
+
+### 🚀 How to Run
+
+Run the main script and select the desired task from the interactive menu.
 
 ```bash
 python3 main.py
 ```
 
+---
 
+### 📂 File Structure
+
+```
+goit-algo2-hw-02/
+├─ main.py
+├─ README.md
+├─ .gitignore
+├─ task_1/
+│  └─ task.py
+└─ task_2/
+   └─ task2.py
+```
